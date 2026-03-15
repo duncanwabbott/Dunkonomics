@@ -1,0 +1,6 @@
+
+.env
+
+.openclaw/
+data/*.csv
+!data/.gitkeep
