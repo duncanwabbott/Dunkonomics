@@ -74,6 +74,13 @@ if 'parlay_legs' not in st.session_state:
 
 import fetcher
 
+@st.cache_resource(ttl=43200, show_spinner=False)
+def trigger_fetch_cycle():
+    with st.spinner("Initializing ephemeral environment & fetching fresh NBA data... This might take a minute."):
+        fetcher.run_fetch_cycle()
+        st.cache_data.clear()
+        return True
+
 def check_and_fetch_data():
     files_to_check = [
         STANDINGS_FILE, 
@@ -92,16 +99,15 @@ def check_and_fetch_data():
             break
         
         # Check if older than 12 hours
-        mtime = os.path.getmtime(filepath)
-        file_age_hours = (time.time() - mtime) / 3600
-        if file_age_hours > 12:
-            needs_fetch = True
-            break
+        if os.path.exists(filepath):
+            mtime = os.path.getmtime(filepath)
+            file_age_hours = (time.time() - mtime) / 3600
+            if file_age_hours > 12:
+                needs_fetch = True
+                break
             
     if needs_fetch:
-        with st.spinner("Initializing ephemeral environment & fetching fresh NBA data... This might take a minute."):
-            fetcher.run_fetch_cycle()
-            st.cache_data.clear()
+        trigger_fetch_cycle()
 
 check_and_fetch_data()
 

@@ -17,6 +17,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
 DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 os.makedirs(DATA_DIR, exist_ok=True)
 
+NBA_HEADERS = {
+    'Host': 'stats.nba.com',
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+    'Accept': 'application/json, text/plain, */*',
+    'x-nba-stats-origin': 'stats',
+    'x-nba-stats-token': 'true',
+    'Referer': 'https://stats.nba.com/'
+}
+
+
 NBA_ARENAS = {
     "ATL": {"lat": 33.7573, "lon": -84.3963, "tz": -5},
     "BOS": {"lat": 42.3662, "lon": -71.0621, "tz": -5},
@@ -64,7 +74,7 @@ def haversine(lat1, lon1, lat2, lon2):
 def fetch_standings():
     try:
         logging.info("Fetching Standings...")
-        standings = leaguestandingsv3.LeagueStandingsV3(timeout=30)
+        standings = leaguestandingsv3.LeagueStandingsV3(timeout=30, headers=NBA_HEADERS)
         df = standings.get_data_frames()[0]
         df.rename(columns={'PlayoffRank': 'Rank', 'WinPCT': 'Win %', 'PointsPG': 'PPG', 'OppPointsPG': 'OPP PPG', 'strCurrentStreak': 'Streak', 'DiffPointsPG': 'Diff'}, inplace=True)
         cols = ['TeamName', 'Conference', 'Rank', 'WINS', 'LOSSES', 'Win %', 'HOME', 'ROAD', 'L10', 'Streak', 'PPG', 'OPP PPG', 'Diff']
@@ -74,12 +84,14 @@ def fetch_standings():
         return True
     except Exception as e:
         logging.error(f"Failed to fetch standings: {e}")
+        cols = ['TeamName', 'Conference', 'Rank', 'WINS', 'LOSSES', 'Win %', 'HOME', 'ROAD', 'L10', 'Streak', 'PPG', 'OPP PPG', 'Diff']
+        pd.DataFrame(columns=cols).to_csv(os.path.join(DATA_DIR, "standings.csv"), index=False)
         return False
 
 def fetch_team_stats():
     try:
         logging.info("Fetching Advanced Team Stats...")
-        team_stats = leaguedashteamstats.LeagueDashTeamStats(measure_type_detailed_defense='Advanced', timeout=30)
+        team_stats = leaguedashteamstats.LeagueDashTeamStats(measure_type_detailed_defense='Advanced', timeout=30, headers=NBA_HEADERS)
         df = team_stats.get_data_frames()[0]
         cols = ['TEAM_NAME', 'GP', 'W', 'L', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'TS_PCT', 'PACE']
         df = df[cols].sort_values('NET_RATING', ascending=False)
@@ -88,6 +100,8 @@ def fetch_team_stats():
         return True
     except Exception as e:
         logging.error(f"Failed to fetch team stats: {e}")
+        cols = ['TEAM_NAME', 'GP', 'W', 'L', 'OFF_RATING', 'DEF_RATING', 'NET_RATING', 'AST_PCT', 'TS_PCT', 'PACE']
+        pd.DataFrame(columns=cols).to_csv(os.path.join(DATA_DIR, "team_stats.csv"), index=False)
         return False
 
 def fetch_players():
@@ -100,12 +114,13 @@ def fetch_players():
         return True
     except Exception as e:
         logging.error(f"Failed to fetch players: {e}")
+        pd.DataFrame([{'id': -1, 'full_name': 'Sync Failed', 'first_name': '', 'last_name': '', 'is_active': False}]).to_csv(os.path.join(DATA_DIR, "players.csv"), index=False)
         return False
 
 def fetch_advanced_players():
     try:
         logging.info("Fetching Advanced Player Stats...")
-        player_stats = leaguedashplayerstats.LeagueDashPlayerStats(measure_type_detailed_defense='Advanced', timeout=30)
+        player_stats = leaguedashplayerstats.LeagueDashPlayerStats(measure_type_detailed_defense='Advanced', timeout=30, headers=NBA_HEADERS)
         df = player_stats.get_data_frames()[0]
         df['DUNK_SCORE'] = (df['TS_PCT'] * 0.4) + (df['AST_PCT'] * 0.3) + (df['USG_PCT'] * 0.2) + df['PIE'] - (df['TM_TOV_PCT'] * 1.5)
         
@@ -116,13 +131,15 @@ def fetch_advanced_players():
         return True
     except Exception as e:
         logging.error(f"Failed to fetch advanced players: {e}")
+        cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 'TS_PCT', 'AST_PCT', 'USG_PCT', 'PIE', 'TM_TOV_PCT', 'DUNK_SCORE']
+        pd.DataFrame(columns=cols).to_csv(os.path.join(DATA_DIR, "advanced_players.csv"), index=False)
         return False
 
 def fetch_cumfat():
     try:
         logging.info("Fetching CumFat Data...")
         ten_days_ago = (datetime.now() - timedelta(days=10)).strftime('%m/%d/%Y')
-        lg = leaguegamelog.LeagueGameLog(player_or_team_abbreviation='P', date_from_nullable=ten_days_ago)
+        lg = leaguegamelog.LeagueGameLog(player_or_team_abbreviation='P', date_from_nullable=ten_days_ago, headers=NBA_HEADERS)
         df = lg.get_data_frames()[0]
 
         def parse_location(matchup, home_team):
@@ -192,6 +209,8 @@ def fetch_cumfat():
         return True
     except Exception as e:
         logging.error(f"Failed to fetch CumFat: {e}")
+        cols = ['PlayerID', 'PlayerName', 'CumFatScore', 'MilesFlown', 'TimeZones', 'ScheduleContext', 'RestDeficit', 'RecentWorkload']
+        pd.DataFrame(columns=cols).to_csv(os.path.join(DATA_DIR, "cumfat.csv"), index=False)
         return False
 
 
@@ -199,7 +218,7 @@ def fetch_foul_data():
     try:
         logging.info("Fetching Foul Data (Players & Teams)...")
         # Players
-        player_stats = leaguedashplayerstats.LeagueDashPlayerStats(timeout=30)
+        player_stats = leaguedashplayerstats.LeagueDashPlayerStats(timeout=30, headers=NBA_HEADERS)
         p_df = player_stats.get_data_frames()[0]
         p_df['FTr'] = p_df['FTA'] / p_df['FGA'].replace(0, 1)
         p_df['Net_Fouls'] = p_df['PFD'] - p_df['PF']
@@ -208,7 +227,7 @@ def fetch_foul_data():
         p_df.to_csv(os.path.join(DATA_DIR, "player_fouls.csv"), index=False)
 
         # Teams
-        team_stats = leaguedashteamstats.LeagueDashTeamStats(timeout=30)
+        team_stats = leaguedashteamstats.LeagueDashTeamStats(timeout=30, headers=NBA_HEADERS)
         t_df = team_stats.get_data_frames()[0]
         t_df['FTr'] = t_df['FTA'] / t_df['FGA'].replace(0, 1)
         t_df['Net_Fouls'] = t_df['PFD'] - t_df['PF']
@@ -220,6 +239,10 @@ def fetch_foul_data():
         return True
     except Exception as e:
         logging.error(f"Failed to fetch foul data: {e}")
+        p_cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 'PF', 'PFD', 'FTA', 'FGA', 'FTr', 'Net_Fouls']
+        pd.DataFrame(columns=p_cols).to_csv(os.path.join(DATA_DIR, "player_fouls.csv"), index=False)
+        t_cols = ['TEAM_ID', 'TEAM_NAME', 'GP', 'MIN', 'PF', 'PFD', 'FTA', 'FGA', 'FTr', 'Net_Fouls']
+        pd.DataFrame(columns=t_cols).to_csv(os.path.join(DATA_DIR, "team_fouls.csv"), index=False)
         return False
 
 def run_fetch_cycle():
