@@ -22,6 +22,8 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 STANDINGS_FILE = os.path.join(DATA_DIR, "standings.csv")
 TEAM_STATS_FILE = os.path.join(DATA_DIR, "team_stats.csv")
 PLAYERS_FILE = os.path.join(DATA_DIR, "players.csv")
+PLAYER_FOULS_FILE = os.path.join(DATA_DIR, "player_fouls.csv")
+TEAM_FOULS_FILE = os.path.join(DATA_DIR, "team_fouls.csv")
 
 # Premium CSS Styling (Dark Mode - Bloomberg/Terminal Vibe)
 st.markdown("""
@@ -77,7 +79,10 @@ def check_and_fetch_data():
         STANDINGS_FILE, 
         TEAM_STATS_FILE, 
         PLAYERS_FILE,
-        os.path.join(DATA_DIR, "advanced_players.csv")
+        os.path.join(DATA_DIR, "advanced_players.csv"),
+        os.path.join(DATA_DIR, "cumfat.csv"),
+        PLAYER_FOULS_FILE,
+        TEAM_FOULS_FILE
     ]
     
     needs_fetch = False
@@ -128,6 +133,23 @@ def load_advanced_players():
     advanced_path = os.path.join(DATA_DIR, 'advanced_players.csv')
     if os.path.exists(advanced_path): return pd.read_csv(advanced_path)
     return None
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_cumfat():
+    cumfat_path = os.path.join(DATA_DIR, 'cumfat.csv')
+    if os.path.exists(cumfat_path): return pd.read_csv(cumfat_path)
+    return None
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_player_fouls():
+    if os.path.exists(PLAYER_FOULS_FILE): return pd.read_csv(PLAYER_FOULS_FILE)
+    return None
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def load_team_fouls():
+    if os.path.exists(TEAM_FOULS_FILE): return pd.read_csv(TEAM_FOULS_FILE)
+    return None
+
 
 NBA_HEADERS = {
     'Host': 'stats.nba.com',
@@ -196,7 +218,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-page = st.radio("Navigation", ["League Macro", "Player Micro", "Team Advanced", "🤓 Sports Dorks [PRO]"], horizontal=True, label_visibility="collapsed")
+page = st.radio("Navigation", ["League Macro", "Player Micro", "Team Advanced", "⚖️ Foul Economics", "🤓 Sports Dorks [PRO]"], horizontal=True, label_visibility="collapsed")
 st.markdown("<br>", unsafe_allow_html=True)
 
 # --- PAGE: LEAGUE MACRO ---
@@ -282,6 +304,106 @@ elif page == "Player Micro":
                     st.markdown("##### Raw Season Totals")
                     raw_cols = ['TEAM_ABBREVIATION', 'MIN', 'FGM', 'FGA', 'FG3M', 'FG3A', 'FTM', 'FTA', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV']
                     st.dataframe(stats_df[raw_cols], hide_index=True, use_container_width=True)
+
+                    st.markdown("---")
+                    st.markdown("### 🏃‍♂️ Cumulative Fatigue (CumFat) Dashboard")
+                    
+                    cumfat_df = load_cumfat()
+                    if cumfat_df is not None and not cumfat_df.empty:
+                        # Match player ID
+                        player_cf = cumfat_df[cumfat_df['PlayerID'] == pid]
+                        if not player_cf.empty:
+                            cf_score = player_cf['CumFatScore'].values[0]
+                            miles = player_cf['MilesFlown'].values[0]
+                            tz = player_cf['TimeZones'].values[0]
+                            sched = player_cf['ScheduleContext'].values[0]
+                            rest_def = player_cf['RestDeficit'].values[0]
+                            workload = player_cf['RecentWorkload'].values[0]
+                            
+                            if cf_score < 40:
+                                cf_color = "#10b981" # Green
+                                cf_text = "FRESH"
+                            elif cf_score <= 70:
+                                cf_color = "#f59e0b" # Yellow
+                                cf_text = "MODERATE"
+                            else:
+                                cf_color = "#ef4444" # Red
+                                cf_text = "EXHAUSTED"
+                                
+                            st.markdown(f"<div style='text-align: center; margin-bottom: 20px;'><h1 style='color: {cf_color}; font-size: 3rem;'>{cf_score}</h1><h3 style='color: #94a3b8; font-weight: 300; margin-top: -15px;'>MASTER SCORE: {cf_text}</h3></div>", unsafe_allow_html=True)
+                            
+                            with st.expander("ℹ️ How is CumFat Calculated?"):
+                                st.markdown("""
+                                **Cumulative Fatigue (CumFat)** is our proprietary metric measuring player wear-and-tear using three core pillars:
+                                - **✈️ Travel Toll (45%)**: Distance traveled and body clock disruption from crossing time zones.
+                                - **📅 Schedule Density (35%)**: Rest deficits, back-to-backs, and 3-in-4 nights.
+                                - **🏃 Workload (20%)**: Recent minutes played and physical expenditure on the court.
+                                """)
+                                
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            cf1, cf2, cf3, cf4, cf5 = st.columns(5)
+                            cf1.metric("Miles Flown", f"{miles:,}", help="Total miles flown between arenas in the last 10 days.")
+                            cf2.metric("Time Zones", tz, help="Number of time zones crossed in the last 10 days. Higher values disrupt circadian rhythms.")
+                            cf3.metric("Schedule Context", sched, help="Schedule density severity (e.g., B2B, 3-in-4 nights).")
+                            cf4.metric("Rest Deficit", rest_def, help="Days since the player had 48 hours of rest.")
+                            cf5.metric("Recent Workload", workload, help="Total minutes played by the player over the last 10 days.")
+                            
+                        else:
+                            st.error("No recent data. Player has not logged minutes in the last 10 days to calculate Cumulative Fatigue.")
+                    else:
+                        st.info("CumFat Database is building. The sync loop hasn't completed yet.")
+                    st.markdown("--- ")
+                    st.markdown("### ⚖️ Discipline & Foul Profile")
+                    player_fouls = load_player_fouls()
+                    if player_fouls is not None and not player_fouls.empty:
+                        pf_df = player_fouls[player_fouls['PLAYER_ID'] == pid]
+                        if not pf_df.empty:
+                            net_fouls = pf_df['Net_Fouls'].values[0]
+                            pf = round(pf_df['PF'].values[0] / pf_df['GP'].values[0], 1) if pf_df['GP'].values[0] > 0 else 0
+                            pfd = round(pf_df['PFD'].values[0] / pf_df['GP'].values[0], 1) if pf_df['GP'].values[0] > 0 else 0
+                            ftr = round(pf_df['FTr'].values[0], 3)
+                            
+                            st.markdown("<p style='color: #94a3b8; font-size: 0.9rem; margin-top: -10px;'>A granular look at the player's ability to draw contact without fouling.</p>", unsafe_allow_html=True)
+                            f1, f2, f3, f4 = st.columns(4)
+                            f1.metric("Net Fouls", round(net_fouls, 1), help="Total Personal Fouls Drawn minus Personal Fouls Committed")
+                            f2.metric("Personal Fouls (PG)", pf, help="Personal Fouls Committed per game")
+                            f3.metric("Fouls Drawn (PG)", pfd, help="Personal Fouls Drawn per game")
+                            f4.metric("Free Throw Rate (FTr)", ftr, help="Ratio of Free Throw Attempts to Field Goal Attempts (FTA / FGA)")
+                        else:
+                            st.info("No foul data found for this player.")
+                    else:
+                        st.info("Foul Profile syncing...")
+
+
+# --- PAGE: TEAM ADVANCED ---
+
+elif page == "⚖️ Foul Economics":
+    st.markdown("### ⚖️ Team Foul Discipline & Free Throw Rates")
+    team_fouls = load_team_fouls()
+    if team_fouls is not None and not team_fouls.empty:
+        st.markdown("##### Net Fouls & Free Throw Rate Differential")
+        st.markdown("<p style='font-size: 0.85rem; color: #64748b; margin-top: -10px;'>Net Fouls = PFD (Fouls Drawn) - PF (Personal Fouls). High FTr = Elite at drawing contact vs settling.</p>", unsafe_allow_html=True)
+        
+        # Display the highly polished dataframe
+        st.dataframe(
+            team_fouls.style.background_gradient(subset=['Net_Fouls'], cmap='RdYlGn')
+            .background_gradient(subset=['FTr'], cmap='Blues')
+            .background_gradient(subset=['PF'], cmap='Reds')
+            .background_gradient(subset=['PFD'], cmap='Greens')
+            .format({
+                'FTr': '{:.3f}', 
+                'PF': '{:.1f}', 
+                'PFD': '{:.1f}', 
+                'FTA': '{:.1f}', 
+                'FGA': '{:.1f}', 
+                'Net_Fouls': '{:.1f}'
+            }),
+            use_container_width=True,
+            hide_index=True,
+            height=600
+        )
+    else:
+        st.info("Foul Data is syncing in the background. Please check back shortly.")
 
 # --- PAGE: TEAM ADVANCED ---
 elif page == "Team Advanced":
