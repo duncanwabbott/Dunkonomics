@@ -387,27 +387,34 @@ elif page == "⚖️ Foul Economics":
     st.markdown("### ⚖️ Team Foul Discipline & Free Throw Rates")
     team_fouls = load_team_fouls()
     if team_fouls is not None and not team_fouls.empty:
-        st.markdown("##### Net Fouls & Free Throw Rate Differential")
-        st.markdown("<p style='font-size: 0.85rem; color: #64748b; margin-top: -10px;'>Net Fouls = PFD (Fouls Drawn) - PF (Personal Fouls). High FTr = Elite at drawing contact vs settling.</p>", unsafe_allow_html=True)
+        # Drop TEAM_ID for cleaner view, ensure no NaNs break styling
+        display_df = team_fouls.drop(columns=['TEAM_ID'], errors='ignore').copy()
+        display_df = display_df.dropna(subset=['Net_Fouls', 'FTr', 'PF', 'PFD'])
         
-        # Display the highly polished dataframe
-        st.dataframe(
-            team_fouls.style.background_gradient(subset=['Net_Fouls'], cmap='RdYlGn')
-            .background_gradient(subset=['FTr'], cmap='Blues')
-            .background_gradient(subset=['PF'], cmap='Reds')
-            .background_gradient(subset=['PFD'], cmap='Greens')
-            .format({
-                'FTr': '{:.3f}', 
-                'PF': '{:.1f}', 
-                'PFD': '{:.1f}', 
-                'FTA': '{:.1f}', 
-                'FGA': '{:.1f}', 
-                'Net_Fouls': '{:.1f}'
-            }),
-            use_container_width=True,
-            hide_index=True,
-            height=600
-        )
+        if not display_df.empty:
+            st.markdown("##### Net Fouls & Free Throw Rate Differential")
+            st.markdown("<p style='font-size: 0.85rem; color: #64748b; margin-top: -10px;'>Net Fouls = PFD (Fouls Drawn) - PF (Personal Fouls). High FTr = Elite at drawing contact vs settling.</p>", unsafe_allow_html=True)
+            
+            # Display the highly polished dataframe
+            st.dataframe(
+                display_df.style.background_gradient(subset=['Net_Fouls'], cmap='RdYlGn')
+                .background_gradient(subset=['FTr'], cmap='Blues')
+                .background_gradient(subset=['PF'], cmap='Reds')
+                .background_gradient(subset=['PFD'], cmap='Greens')
+                .format({
+                    'FTr': '{:.3f}', 
+                    'PF': '{:.1f}', 
+                    'PFD': '{:.1f}', 
+                    'FTA': '{:.1f}', 
+                    'FGA': '{:.1f}', 
+                    'Net_Fouls': '{:.1f}'
+                }),
+                use_container_width=True,
+                hide_index=True,
+                height=600
+            )
+        else:
+            st.info("Foul Data is syncing or invalid. Please check back shortly.")
     else:
         st.info("Foul Data is syncing in the background. Please check back shortly.")
 
