@@ -340,10 +340,14 @@ elif page == "Player Micro":
                             
                             with st.expander("ℹ️ How is CumFat Calculated?"):
                                 st.markdown("""
-                                **Cumulative Fatigue (CumFat)** is our proprietary metric measuring player wear-and-tear using three core pillars:
-                                - **✈️ Travel Toll (45%)**: Distance traveled and body clock disruption from crossing time zones.
-                                - **📅 Schedule Density (35%)**: Rest deficits, back-to-backs, and 3-in-4 nights.
-                                - **🏃 Workload (20%)**: Recent minutes played and physical expenditure on the court.
+                                **Cumulative Fatigue (CumFat)** is now a Machine Learning-backed predictive model trained on historical NBA injury and rest absence data (`historical_fatigue.csv`). It calculates the probability of a player missing their next game, scaled to a 0-100 score.
+                                
+                                **Model Formulation & Accuracy:**
+                                Our Logistic Regression model achieves **~71.7% accuracy** predicting game absences. The formula uses standardized log-odds converted via sigmoid function, heavily penalizing specific workload and travel thresholds.
+                                
+                                **Key ML Insights & Correlations:**
+                                - **🏃 Workload & Schedule Density (Negative Correlation):** Interestingly, `Recent Workload` (coeff: -0.605) and `Games in 7 Days` (coeff: -0.225) are the strongest predictors. In the NBA, playing *fewer* minutes or games leading up to a match is the highest indicator of missing the next game due to injury management or minor tweaks.
+                                - **✈️ Travel Toll (Positive Correlation):** `Time Zones Crossed` (coeff: +0.027) and `Miles Flown` (coeff: +0.008) positively correlate with absence risk. Heavy cross-country travel objectively increases the likelihood of a player sitting out.
                                 """)
                                 
                             st.markdown("<br>", unsafe_allow_html=True)

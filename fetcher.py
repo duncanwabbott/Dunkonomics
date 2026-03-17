@@ -186,11 +186,36 @@ def fetch_cumfat():
             
             rest_deficit = b2b_count
             
-            tt = (miles_flown / 5000) * 45
-            sd = (schedule_density / 30) * 35
-            wl = (recent_workload / 40) * 20
+            import json
+            import math
+            import os
             
-            cumfat = min(100, tt + sd + wl)
+            try:
+                with open(os.path.join("data", "cumfat_ml_weights.json"), "r") as f:
+                    ml_data = json.load(f)
+                    w = ml_data["weights"]
+                    b = ml_data["bias"]
+                    
+                    # Compute log-odds
+                    log_odds = b + \
+                               w["MILES_FLOWN_7D"] * miles_flown + \
+                               w["TZ_CROSSED_7D"] * time_zones_crossed + \
+                               w["GAMES_IN_7D"] * len(p_df) + \
+                               w["B2B_IN_7D"] * b2b_count + \
+                               w["RECENT_WORKLOAD_MIN"] * recent_workload
+                    
+                    # Convert to probability using sigmoid, then scale to 0-100
+                    probability = 1.0 / (1.0 + math.exp(-log_odds))
+                    
+                    # Since base probability might be low (~15%), let's normalize it a bit so 15% -> 50 score
+                    # Or just return raw probability * 100
+                    cumfat = min(100.0, probability * 100.0)
+            except Exception as e:
+                # Fallback if file missing
+                tt = (miles_flown / 5000) * 45
+                sd = (schedule_density / 30) * 35
+                wl = (recent_workload / 40) * 20
+                cumfat = min(100, tt + sd + wl)
             
             results.append({
                 "PlayerID": player_id,
