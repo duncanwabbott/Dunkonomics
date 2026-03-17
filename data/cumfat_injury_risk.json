@@ -1,0 +1,32 @@
+{
+    "SOFT_TISSUE_FATIGUE": {
+        "CUMFAT_THRESHOLD_MODERATE": 65,
+        "CUMFAT_THRESHOLD_HIGH": 80,
+        "KEYWORDS": [
+            "hamstring",
+            "groin",
+            "calf",
+            "soreness",
+            "strain",
+            "achilles"
+        ]
+    },
+    "CONTACT_OTHER": {
+        "CUMFAT_THRESHOLD_MODERATE": 85,
+        "CUMFAT_THRESHOLD_HIGH": 95,
+        "KEYWORDS": [
+            "concussion",
+            "fracture",
+            "break",
+            "torn",
+            "ligament",
+            "sprain",
+            "dislocated"
+        ]
+    },
+    "SPIKE_PROBABILITIES": {
+        "BASELINE_RISK_PER_GAME": 0.02,
+        "MODERATE_MULTIPLIER": 2.5,
+        "HIGH_MULTIPLIER": 4.2
+    }
+}

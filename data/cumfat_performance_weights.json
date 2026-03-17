@@ -1,0 +1,20 @@
+{
+    "TS_PERCENT_DROP": {
+        "MILES_FLOWN_1000": -0.4,
+        "TZ_CROSSED": -0.15,
+        "B2B": -1.2,
+        "REST_DEFICIT_MIN": -0.05
+    },
+    "TURNOVER_INCREASE": {
+        "MILES_FLOWN_1000": 0.1,
+        "TZ_CROSSED": 0.05,
+        "B2B": 0.3,
+        "REST_DEFICIT_MIN": 0.02
+    },
+    "DUNK_SCORE_DEVIATION": {
+        "MILES_FLOWN_1000": -1.5,
+        "TZ_CROSSED": -0.8,
+        "B2B": -3.5,
+        "REST_DEFICIT_MIN": -0.2
+    }
+}

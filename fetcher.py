@@ -217,6 +217,30 @@ def fetch_cumfat():
                 wl = (recent_workload / 40) * 20
                 cumfat = min(100, tt + sd + wl)
             
+
+            try:
+                with open(os.path.join("data", "cumfat_performance_weights.json"), "r") as f:
+                    perf_weights = json.load(f)
+                
+                ts_drop = (miles_flown / 1000) * perf_weights["TS_PERCENT_DROP"]["MILES_FLOWN_1000"] +                           time_zones_crossed * perf_weights["TS_PERCENT_DROP"]["TZ_CROSSED"] +                           b2b_count * perf_weights["TS_PERCENT_DROP"]["B2B"] +                           max(0, recent_workload - 30) * perf_weights["TS_PERCENT_DROP"]["REST_DEFICIT_MIN"]
+                
+                tov_inc = (miles_flown / 1000) * perf_weights["TURNOVER_INCREASE"]["MILES_FLOWN_1000"] +                           time_zones_crossed * perf_weights["TURNOVER_INCREASE"]["TZ_CROSSED"] +                           b2b_count * perf_weights["TURNOVER_INCREASE"]["B2B"] +                           max(0, recent_workload - 30) * perf_weights["TURNOVER_INCREASE"]["REST_DEFICIT_MIN"]
+                
+                exp_perf_drop = f"{round(ts_drop, 1)}% TS, +{round(tov_inc, 1)} TOV"
+                
+                with open(os.path.join("data", "cumfat_injury_risk.json"), "r") as f:
+                    inj_risk = json.load(f)
+                
+                if cumfat > inj_risk["SOFT_TISSUE_FATIGUE"]["CUMFAT_THRESHOLD_HIGH"]:
+                    injury_profile = "Critical Soft-Tissue Risk"
+                elif cumfat > inj_risk["SOFT_TISSUE_FATIGUE"]["CUMFAT_THRESHOLD_MODERATE"]:
+                    injury_profile = "Elevated Soft-Tissue Risk"
+                else:
+                    injury_profile = "Baseline Risk"
+            except Exception as e:
+                exp_perf_drop = "0% TS, +0 TOV"
+                injury_profile = "Baseline Risk"
+
             results.append({
                 "PlayerID": player_id,
                 "PlayerName": p_name,
@@ -225,8 +249,11 @@ def fetch_cumfat():
                 "TimeZones": round(time_zones_crossed, 1),
                 "ScheduleContext": f"{b2b_count} B2Bs",
                 "RestDeficit": rest_deficit,
-                "RecentWorkload": round(recent_workload, 1)
+                "RecentWorkload": round(recent_workload, 1),
+                "ExpPerfDrop": exp_perf_drop,
+                "InjuryRisk": injury_profile
             })
+
             
         final_df = pd.DataFrame(results)
         final_df.to_csv(os.path.join(DATA_DIR, "cumfat.csv"), index=False)
@@ -234,7 +261,7 @@ def fetch_cumfat():
         return True
     except Exception as e:
         logging.error(f"Failed to fetch CumFat: {e}")
-        cols = ['PlayerID', 'PlayerName', 'CumFatScore', 'MilesFlown', 'TimeZones', 'ScheduleContext', 'RestDeficit', 'RecentWorkload']
+        cols = ['PlayerID', 'PlayerName', 'CumFatScore', 'MilesFlown', 'TimeZones', 'ScheduleContext', 'RestDeficit', 'RecentWorkload', 'ExpPerfDrop', 'InjuryRisk']
         pd.DataFrame(columns=cols).to_csv(os.path.join(DATA_DIR, "cumfat.csv"), index=False)
         return False
 

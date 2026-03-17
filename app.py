@@ -336,18 +336,31 @@ elif page == "Player Micro":
                                 cf_color = "#ef4444" # Red
                                 cf_text = "EXHAUSTED"
                                 
+                            # Retrieve expected performance drop and injury risk if available
+                            exp_perf = player_cf.get('ExpPerfDrop', pd.Series(["0% TS, +0 TOV"])).values[0]
+                            inj_risk = player_cf.get('InjuryRisk', pd.Series(["Baseline Risk"])).values[0]
+                                
                             st.markdown(f"<div style='text-align: center; margin-bottom: 20px;'><h1 style='color: {cf_color}; font-size: 3rem;'>{cf_score}</h1><h3 style='color: #94a3b8; font-weight: 300; margin-top: -15px;'>MASTER SCORE: {cf_text}</h3></div>", unsafe_allow_html=True)
                             
-                            with st.expander("ℹ️ How is CumFat Calculated?"):
+                            cfa, cfb = st.columns(2)
+                            cfa.markdown(f"<div class='metric-card'><div class='metric-title' style='color: #ef4444;'>Tonight's Expected Performance Drop</div><div class='metric-value'>{exp_perf}</div><div class='metric-sub'>Based on CumFat Linear Regression Weights</div></div>", unsafe_allow_html=True)
+                            
+                            risk_color = "#ef4444" if "Critical" in inj_risk else ("#f59e0b" if "Elevated" in inj_risk else "#10b981")
+                            cfb.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {risk_color};'>Injury Risk Profile</div><div class='metric-value' style='font-size: 1.5rem;'>{inj_risk}</div><div class='metric-sub'>Based on CumFat Spectrum ML Classification</div></div>", unsafe_allow_html=True)
+                            
+                            st.markdown("<br>", unsafe_allow_html=True)
+                            
+                            with st.expander("ℹ️ How are Performance Degradation and Injury Risk Calculated?"):
                                 st.markdown("""
-                                **Cumulative Fatigue (CumFat)** is now a Machine Learning-backed predictive model trained on historical NBA injury and rest absence data (`historical_fatigue.csv`). It calculates the probability of a player missing their next game, scaled to a 0-100 score.
+                                **CumFat has pivoted away from predicting simple availability.** We now predict how fatigue impacts a player's true output and physiological vulnerability.
                                 
-                                **Model Formulation & Accuracy:**
-                                Our Logistic Regression model achieves **~71.7% accuracy** predicting game absences. The formula uses standardized log-odds converted via sigmoid function, heavily penalizing specific workload and travel thresholds.
+                                **1. Expected Performance Drop (Linear Regression):**
+                                We target the variance in actual in-game performance using historical `cumfat_performance_weights.json`. 
+                                For instance, high Miles Flown and B2B occurrences aggressively penalize True Shooting % and spike Turnovers.
                                 
-                                **Key ML Insights & Correlations:**
-                                - **🏃 Workload & Schedule Density (Negative Correlation):** Interestingly, `Recent Workload` (coeff: -0.605) and `Games in 7 Days` (coeff: -0.225) are the strongest predictors. In the NBA, playing *fewer* minutes or games leading up to a match is the highest indicator of missing the next game due to injury management or minor tweaks.
-                                - **✈️ Travel Toll (Positive Correlation):** `Time Zones Crossed` (coeff: +0.027) and `Miles Flown` (coeff: +0.008) positively correlate with absence risk. Heavy cross-country travel objectively increases the likelihood of a player sitting out.
+                                **2. Injury Risk Profile (Classification Spectrum):**
+                                Based on `cumfat_injury_risk.json`, historical absences are categorized into *Soft-Tissue/Fatigue* vs *Contact/Other*. 
+                                Once a player's CumFat score breaches our specific threshold (e.g. > 65), the probability of soft-tissue issues (hamstring, groin, calf, soreness) spikes significantly.
                                 """)
                                 
                             st.markdown("<br>", unsafe_allow_html=True)
