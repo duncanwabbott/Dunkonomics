@@ -312,70 +312,52 @@ elif page == "Player Micro":
                     st.dataframe(stats_df[raw_cols], hide_index=True, use_container_width=True)
 
                     st.markdown("---")
-                    st.markdown("### 🏃‍♂️ Cumulative Fatigue (CumFat) Dashboard")
+                    st.markdown("### Cumulative Fatigue Framework (CumFat)")
+                    st.markdown("<p style='color: #94a3b8; font-size: 0.95rem; margin-top: -10px; font-weight: 400;'>Advanced physiological load modeling separating acute injury risk from biomechanical performance degradation.</p>", unsafe_allow_html=True)
                     
                     cumfat_df = load_cumfat()
                     if cumfat_df is not None and not cumfat_df.empty:
                         # Match player ID
                         player_cf = cumfat_df[cumfat_df['PlayerID'] == pid]
                         if not player_cf.empty:
-                            cf_score = player_cf['CumFatScore'].values[0]
+                            ir_score = player_cf['CumFat_IR'].values[0]
+                            pd_score = player_cf['CumFat_PD'].values[0]
                             miles = player_cf['MilesFlown'].values[0]
-                            tz = player_cf['TimeZones'].values[0]
-                            sched = player_cf['ScheduleContext'].values[0]
                             rest_def = player_cf['RestDeficit'].values[0]
                             workload = player_cf['RecentWorkload'].values[0]
+                            age_adj = player_cf['AgeAdjRest'].values[0]
+                            usg_penalty = player_cf['UsageScaledPenalty'].values[0]
+                            usg_pct = player_cf['USG_Pct'].values[0]
                             
-                            if cf_score < 40:
-                                cf_color = "#10b981" # Green
-                                cf_text = "FRESH"
-                            elif cf_score <= 70:
-                                cf_color = "#f59e0b" # Yellow
-                                cf_text = "MODERATE"
-                            else:
-                                cf_color = "#ef4444" # Red
-                                cf_text = "EXHAUSTED"
-                                
-                            # Retrieve expected performance drop and injury risk if available
-                            exp_perf = player_cf.get('ExpPerfDrop', pd.Series(["0% TS, +0 TOV"])).values[0]
-                            inj_risk = player_cf.get('InjuryRisk', pd.Series(["Baseline Risk"])).values[0]
-                                
-                            st.markdown(f"<div style='text-align: center; margin-bottom: 20px;'><h1 style='color: {cf_color}; font-size: 3rem;'>{cf_score}</h1><h3 style='color: #94a3b8; font-weight: 300; margin-top: -15px;'>MASTER SCORE: {cf_text}</h3></div>", unsafe_allow_html=True)
+                            ir_color = "#ef4444" if ir_score > 70 else "#f59e0b" if ir_score > 40 else "#10b981"
+                            ir_label = "CRITICAL" if ir_score > 70 else "ELEVATED" if ir_score > 40 else "BASELINE"
                             
                             cfa, cfb = st.columns(2)
-                            cfa.markdown(f"<div class='metric-card'><div class='metric-title' style='color: #ef4444;'>Tonight's Expected Performance Drop</div><div class='metric-value'>{exp_perf}</div><div class='metric-sub'>Based on CumFat Linear Regression Weights</div></div>", unsafe_allow_html=True)
+                            cfa.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {ir_color};'>CumFat-IR (Injury Risk Profile)</div><div class='metric-value' style='color: {ir_color};'>{ir_score:.1f}</div><div class='metric-sub'>Risk Designation: {ir_label}</div></div>", unsafe_allow_html=True)
                             
-                            risk_color = "#ef4444" if "Critical" in inj_risk else ("#f59e0b" if "Elevated" in inj_risk else "#10b981")
-                            cfb.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {risk_color};'>Injury Risk Profile</div><div class='metric-value' style='font-size: 1.5rem;'>{inj_risk}</div><div class='metric-sub'>Based on CumFat Spectrum ML Classification</div></div>", unsafe_allow_html=True)
+                            pd_color = "#ef4444" if pd_score < -2.0 else "#f59e0b" if pd_score < -1.0 else "#10b981"
+                            cfb.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {pd_color};'>CumFat-PD (Performance Degradation)</div><div class='metric-value' style='color: {pd_color};'>{pd_score:+.2f}% TS</div><div class='metric-sub'>Expected Delta vs. Baseline True Shooting</div></div>", unsafe_allow_html=True)
                             
                             st.markdown("<br>", unsafe_allow_html=True)
+                            st.markdown("##### Granular Component Diagnostics")
                             
-                            with st.expander("ℹ️ How are Performance Degradation and Injury Risk Calculated?"):
+                            diag1, diag2, diag3, diag4 = st.columns(4)
+                            diag1.metric("Age-Adjusted Rest Deficit Factor", f"{age_adj:.2f}")
+                            diag2.metric("Usage-Scaled Fatigue Penalty", f"{usg_penalty:.2f}")
+                            diag3.metric("Recent Workload (Min)", f"{workload:.1f}")
+                            diag4.metric("Miles Flown", f"{miles:.1f}")
+                            
+                            with st.expander("Methodology Notes: CumFat Dual-Framework"):
                                 st.markdown("""
-                                **CumFat has pivoted away from predicting simple availability.** We now predict how fatigue impacts a player's true output and physiological vulnerability.
+                                **CumFat-IR (Injury Risk Profile)** is derived from a physiological stress matrix encompassing Age x Rest Deficit interactives, sheer workload velocity, and cumulative travel distance. It acts as an early warning mechanism for soft-tissue vulnerability.
                                 
-                                **1. Expected Performance Drop (Linear Regression):**
-                                We target the variance in actual in-game performance using historical `cumfat_performance_weights.json`. 
-                                For instance, high Miles Flown and B2B occurrences aggressively penalize True Shooting % and spike Turnovers.
-                                
-                                **2. Injury Risk Profile (Classification Spectrum):**
-                                Based on `cumfat_injury_risk.json`, historical absences are categorized into *Soft-Tissue/Fatigue* vs *Contact/Other*. 
-                                Once a player's CumFat score breaches our specific threshold (e.g. > 65), the probability of soft-tissue issues (hamstring, groin, calf, soreness) spikes significantly.
+                                **CumFat-PD (Performance Degradation)** isolates the biomechanical tax of fatigue on shooting efficiency. It weighs back-to-backs and distance traveled disproportionately against a player's offensive usage rate (`USG%`), outputting a forecasted delta in True Shooting Percentage (`TS%`).
                                 """)
-                                
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            cf1, cf2, cf3, cf4, cf5 = st.columns(5)
-                            cf1.metric("Miles Flown", f"{miles:,}", help="Total miles flown between arenas in the last 10 days.")
-                            cf2.metric("Time Zones", tz, help="Number of time zones crossed in the last 10 days. Higher values disrupt circadian rhythms.")
-                            cf3.metric("Schedule Context", sched, help="Schedule density severity (e.g., B2B, 3-in-4 nights).")
-                            cf4.metric("Rest Deficit", rest_def, help="Days since the player had 48 hours of rest.")
-                            cf5.metric("Recent Workload", workload, help="Total minutes played by the player over the last 10 days.")
                             
                         else:
-                            st.error("No recent data. Player has not logged minutes in the last 10 days to calculate Cumulative Fatigue.")
+                            st.error("Insufficient sample to calculate physiological stress profiles (CumFat).")
                     else:
-                        st.info("CumFat Database is building. The sync loop hasn't completed yet.")
-                    st.markdown("--- ")
+                        st.info("CumFat processing pipeline active. Metrics will reflect upon synchronization completion.")
                     st.markdown("### ⚖️ Discipline & Foul Profile")
                     player_fouls = load_player_fouls()
                     if player_fouls is not None and not player_fouls.empty:

@@ -141,6 +141,23 @@ def fetch_cumfat():
         ten_days_ago = (datetime.now() - timedelta(days=10)).strftime('%m/%d/%Y')
         lg = leaguegamelog.LeagueGameLog(player_or_team_abbreviation='P', date_from_nullable=ten_days_ago, headers=NBA_HEADERS)
         df = lg.get_data_frames()[0]
+        
+        # Load advanced stats for USG%
+        try:
+            adv_df = pd.read_csv(os.path.join(DATA_DIR, "advanced_players.csv"))
+            usg_dict = dict(zip(adv_df['PLAYER_ID'], adv_df['USG_PCT']))
+        except:
+            usg_dict = {}
+
+        # Load players for Age (if available, else default to 26)
+        try:
+            players_df = pd.read_csv(os.path.join(DATA_DIR, "players.csv"))
+            # NBA API static players doesn't have age by default, so we'll handle missing gracefully
+            age_dict = {}
+            if 'AGE' in players_df.columns:
+                age_dict = dict(zip(players_df['id'], players_df['AGE']))
+        except:
+            age_dict = {}
 
         def parse_location(matchup, home_team):
             if ' @ ' in matchup:
@@ -186,82 +203,47 @@ def fetch_cumfat():
             
             rest_deficit = b2b_count
             
-            import json
-            import math
-            import os
-            
-            try:
-                with open(os.path.join("data", "cumfat_ml_weights.json"), "r") as f:
-                    ml_data = json.load(f)
-                    w = ml_data["weights"]
-                    b = ml_data["bias"]
-                    
-                    # Compute log-odds
-                    log_odds = b + \
-                               w["MILES_FLOWN_7D"] * miles_flown + \
-                               w["TZ_CROSSED_7D"] * time_zones_crossed + \
-                               w["GAMES_IN_7D"] * len(p_df) + \
-                               w["B2B_IN_7D"] * b2b_count + \
-                               w["RECENT_WORKLOAD_MIN"] * recent_workload
-                    
-                    # Convert to probability using sigmoid, then scale to 0-100
-                    probability = 1.0 / (1.0 + math.exp(-log_odds))
-                    
-                    # Since base probability might be low (~15%), let's normalize it a bit so 15% -> 50 score
-                    # Or just return raw probability * 100
-                    cumfat = min(100.0, probability * 100.0)
-            except Exception as e:
-                # Fallback if file missing
-                tt = (miles_flown / 5000) * 45
-                sd = (schedule_density / 30) * 35
-                wl = (recent_workload / 40) * 20
-                cumfat = min(100, tt + sd + wl)
-            
+            # Safe handle USG% and Age
+            usg_pct = usg_dict.get(player_id, 0.15) # Default 15%
+            age = age_dict.get(player_id, 26) # Default 26
+            if pd.isna(usg_pct): usg_pct = 0.15
+            if pd.isna(age): age = 26
 
-            try:
-                with open(os.path.join("data", "cumfat_performance_weights.json"), "r") as f:
-                    perf_weights = json.load(f)
-                
-                ts_drop = (miles_flown / 1000) * perf_weights["TS_PERCENT_DROP"]["MILES_FLOWN_1000"] +                           time_zones_crossed * perf_weights["TS_PERCENT_DROP"]["TZ_CROSSED"] +                           b2b_count * perf_weights["TS_PERCENT_DROP"]["B2B"] +                           max(0, recent_workload - 30) * perf_weights["TS_PERCENT_DROP"]["REST_DEFICIT_MIN"]
-                
-                tov_inc = (miles_flown / 1000) * perf_weights["TURNOVER_INCREASE"]["MILES_FLOWN_1000"] +                           time_zones_crossed * perf_weights["TURNOVER_INCREASE"]["TZ_CROSSED"] +                           b2b_count * perf_weights["TURNOVER_INCREASE"]["B2B"] +                           max(0, recent_workload - 30) * perf_weights["TURNOVER_INCREASE"]["REST_DEFICIT_MIN"]
-                
-                exp_perf_drop = f"{round(ts_drop, 1)}% TS, +{round(tov_inc, 1)} TOV"
-                
-                with open(os.path.join("data", "cumfat_injury_risk.json"), "r") as f:
-                    inj_risk = json.load(f)
-                
-                if cumfat > inj_risk["SOFT_TISSUE_FATIGUE"]["CUMFAT_THRESHOLD_HIGH"]:
-                    injury_profile = "Critical Soft-Tissue Risk"
-                elif cumfat > inj_risk["SOFT_TISSUE_FATIGUE"]["CUMFAT_THRESHOLD_MODERATE"]:
-                    injury_profile = "Elevated Soft-Tissue Risk"
-                else:
-                    injury_profile = "Baseline Risk"
-            except Exception as e:
-                exp_perf_drop = "0% TS, +0 TOV"
-                injury_profile = "Baseline Risk"
+            # CumFat-IR (Injury Risk)
+            # 0-100 Danger Score based on Age x Rest Deficit, Rest Deficit, Recent Workload, Miles Flown
+            age_adj_rest = age * rest_deficit * 0.05
+            ir_score = (rest_deficit * 15) + (recent_workload * 0.5) + (miles_flown / 100) + age_adj_rest
+            cumfat_ir = min(100.0, max(0.0, ir_score))
+            
+            # CumFat-PD (Performance Degradation)
+            # Expected Delta TS% based on B2B, USG%, B2B_x_USG, and Miles_x_USG
+            b2b_x_usg = b2b_count * usg_pct
+            miles_x_usg = (miles_flown / 1000) * usg_pct
+            
+            pd_drop = (b2b_count * -0.5) + (usg_pct * -1.2) + (b2b_x_usg * -2.5) + (miles_x_usg * -1.5)
+            cumfat_pd = pd_drop # This is expected delta TS%
 
             results.append({
                 "PlayerID": player_id,
                 "PlayerName": p_name,
-                "CumFatScore": round(cumfat, 1),
+                "CumFat_IR": round(cumfat_ir, 1),
+                "CumFat_PD": round(cumfat_pd, 2),
                 "MilesFlown": round(miles_flown, 1),
-                "TimeZones": round(time_zones_crossed, 1),
-                "ScheduleContext": f"{b2b_count} B2Bs",
                 "RestDeficit": rest_deficit,
                 "RecentWorkload": round(recent_workload, 1),
-                "ExpPerfDrop": exp_perf_drop,
-                "InjuryRisk": injury_profile
+                "AgeAdjRest": round(age_adj_rest, 2),
+                "USG_Pct": round(usg_pct, 3),
+                "UsageScaledPenalty": round(miles_x_usg * -1.5, 2),
+                "B2B_x_USG": round(b2b_x_usg, 3)
             })
 
-            
         final_df = pd.DataFrame(results)
         final_df.to_csv(os.path.join(DATA_DIR, "cumfat.csv"), index=False)
-        logging.info("CumFat data saved.")
+        logging.info("CumFat data saved (IR and PD).")
         return True
     except Exception as e:
         logging.error(f"Failed to fetch CumFat: {e}")
-        cols = ['PlayerID', 'PlayerName', 'CumFatScore', 'MilesFlown', 'TimeZones', 'ScheduleContext', 'RestDeficit', 'RecentWorkload', 'ExpPerfDrop', 'InjuryRisk']
+        cols = ['PlayerID', 'PlayerName', 'CumFat_IR', 'CumFat_PD', 'MilesFlown', 'RestDeficit', 'RecentWorkload', 'AgeAdjRest', 'USG_Pct', 'UsageScaledPenalty', 'B2B_x_USG']
         pd.DataFrame(columns=cols).to_csv(os.path.join(DATA_DIR, "cumfat.csv"), index=False)
         return False
 
