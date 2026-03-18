@@ -320,40 +320,42 @@ elif page == "Player Micro":
                         # Match player ID
                         player_cf = cumfat_df[cumfat_df['PlayerID'] == pid]
                         if not player_cf.empty:
-                            ir_score = player_cf['CumFat_IR'].values[0]
-                            pd_score = player_cf['CumFat_PD'].values[0]
-                            miles = player_cf['MilesFlown'].values[0]
-                            rest_def = player_cf['RestDeficit'].values[0]
-                            workload = player_cf['RecentWorkload'].values[0]
-                            age_adj = player_cf['AgeAdjRest'].values[0]
-                            usg_penalty = player_cf['UsageScaledPenalty'].values[0]
-                            usg_pct = player_cf['USG_Pct'].values[0]
-                            
-                            ir_color = "#ef4444" if ir_score > 70 else "#f59e0b" if ir_score > 40 else "#10b981"
-                            ir_label = "CRITICAL" if ir_score > 70 else "ELEVATED" if ir_score > 40 else "BASELINE"
-                            
-                            cfa, cfb = st.columns(2)
-                            cfa.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {ir_color};'>CumFat-IR (Injury Risk Profile)</div><div class='metric-value' style='color: {ir_color};'>{ir_score:.1f}</div><div class='metric-sub'>Risk Designation: {ir_label}</div></div>", unsafe_allow_html=True)
-                            
-                            pd_color = "#ef4444" if pd_score < -2.0 else "#f59e0b" if pd_score < -1.0 else "#10b981"
-                            cfb.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {pd_color};'>CumFat-PD (Performance Degradation)</div><div class='metric-value' style='color: {pd_color};'>{pd_score:+.2f}% TS</div><div class='metric-sub'>Expected Delta vs. Baseline True Shooting</div></div>", unsafe_allow_html=True)
-                            
-                            st.markdown("<br>", unsafe_allow_html=True)
-                            st.markdown("##### Granular Component Diagnostics")
-                            
-                            diag1, diag2, diag3, diag4 = st.columns(4)
-                            diag1.metric("Age-Adjusted Rest Deficit Factor", f"{age_adj:.2f}")
-                            diag2.metric("Usage-Scaled Fatigue Penalty", f"{usg_penalty:.2f}")
-                            diag3.metric("Recent Workload (Min)", f"{workload:.1f}")
-                            diag4.metric("Miles Flown", f"{miles:.1f}")
-                            
-                            with st.expander("Methodology Notes: CumFat Dual-Framework"):
-                                st.markdown("""
-                                **CumFat-IR (Injury Risk Profile)** is derived from a physiological stress matrix encompassing Age x Rest Deficit interactives, sheer workload velocity, and cumulative travel distance. It acts as an early warning mechanism for soft-tissue vulnerability.
+                            if 'CumFat_IR' in player_cf.columns and 'CumFat_PD' in player_cf.columns:
+                                ir_score = player_cf['CumFat_IR'].values[0]
+                                pd_score = player_cf['CumFat_PD'].values[0]
+                                miles = player_cf['MilesFlown'].values[0]
+                                rest_def = player_cf['RestDeficit'].values[0]
+                                workload = player_cf['RecentWorkload'].values[0]
+                                age_adj = player_cf['AgeAdjRest'].values[0]
+                                usg_penalty = player_cf['UsageScaledPenalty'].values[0]
+                                usg_pct = player_cf['USG_Pct'].values[0]
                                 
-                                **CumFat-PD (Performance Degradation)** isolates the biomechanical tax of fatigue on shooting efficiency. It weighs back-to-backs and distance traveled disproportionately against a player's offensive usage rate (`USG%`), outputting a forecasted delta in True Shooting Percentage (`TS%`).
-                                """)
-                            
+                                ir_color = "#ef4444" if ir_score > 70 else "#f59e0b" if ir_score > 40 else "#10b981"
+                                ir_label = "CRITICAL" if ir_score > 70 else "ELEVATED" if ir_score > 40 else "BASELINE"
+                                
+                                cfa, cfb = st.columns(2)
+                                cfa.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {ir_color};'>CumFat-IR (Injury Risk Profile)</div><div class='metric-value' style='color: {ir_color};'>{ir_score:.1f}</div><div class='metric-sub'>Risk Designation: {ir_label}</div></div>", unsafe_allow_html=True)
+                                
+                                pd_color = "#ef4444" if pd_score < -2.0 else "#f59e0b" if pd_score < -1.0 else "#10b981"
+                                cfb.markdown(f"<div class='metric-card'><div class='metric-title' style='color: {pd_color};'>CumFat-PD (Performance Degradation)</div><div class='metric-value' style='color: {pd_color};'>{pd_score:+.2f}% TS</div><div class='metric-sub'>Expected Delta vs. Baseline True Shooting</div></div>", unsafe_allow_html=True)
+                                
+                                st.markdown("<br>", unsafe_allow_html=True)
+                                st.markdown("##### Granular Component Diagnostics")
+                                
+                                diag1, diag2, diag3, diag4 = st.columns(4)
+                                diag1.metric("Age-Adjusted Rest Deficit Factor", f"{age_adj:.2f}")
+                                diag2.metric("Usage-Scaled Fatigue Penalty", f"{usg_penalty:.2f}")
+                                diag3.metric("Recent Workload (Min)", f"{workload:.1f}")
+                                diag4.metric("Miles Flown", f"{miles:.1f}")
+                                
+                                with st.expander("Methodology Notes: CumFat Dual-Framework"):
+                                    st.markdown("""
+                                    **CumFat-IR (Injury Risk Profile)** is derived from a physiological stress matrix encompassing Age x Rest Deficit interactives, sheer workload velocity, and cumulative travel distance. It acts as an early warning mechanism for soft-tissue vulnerability.
+                                    
+                                    **CumFat-PD (Performance Degradation)** isolates the biomechanical tax of fatigue on shooting efficiency. It weighs back-to-backs and distance traveled disproportionately against a player's offensive usage rate (`USG%`), outputting a forecasted delta in True Shooting Percentage (`TS%`).
+                                    """)
+                            else:
+                                st.info("CumFat models are currently syncing... Columns not yet available.")
                         else:
                             st.error("Insufficient sample to calculate physiological stress profiles (CumFat).")
                     else:
