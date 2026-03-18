@@ -141,7 +141,7 @@ def load_advanced_players():
     return None
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def load_cumfat():
+def load_cumfat_v2():
     cumfat_path = os.path.join(DATA_DIR, 'cumfat.csv')
     if os.path.exists(cumfat_path): return pd.read_csv(cumfat_path)
     return None
@@ -315,7 +315,7 @@ elif page == "Player Micro":
                     st.markdown("### Cumulative Fatigue Framework (CumFat)")
                     st.markdown("<p style='color: #94a3b8; font-size: 0.95rem; margin-top: -10px; font-weight: 400;'>Advanced physiological load modeling separating acute injury risk from biomechanical performance degradation.</p>", unsafe_allow_html=True)
                     
-                    cumfat_df = load_cumfat()
+                    cumfat_df = load_cumfat_v2()
                     if cumfat_df is not None and not cumfat_df.empty:
                         # Match player ID
                         player_cf = cumfat_df[cumfat_df['PlayerID'] == pid]
