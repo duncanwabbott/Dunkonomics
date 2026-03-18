@@ -319,13 +319,11 @@ elif page == "Player Micro":
                     st.markdown("### The Proprietary Metrics")
                     col_d1, col_d2 = st.columns(2)
                     with col_d1:
-                        st.markdown("#### 1. DUNK Score (Delta Net Rating Regression)")
-                        st.markdown("<div class='nerd-formula'>DUNK = (TS% * 14.61) + (AST% * 8.63) + (STL% * 7.04) + (DREB% * 4.92) + (USG% * 3.65) + (OREB% * 3.11) + (BLK% * 2.26) - (TOV% * 0.34) - 9.68</div>", unsafe_allow_html=True)
+                        st.markdown("#### 1. The DUNK ML Profile (oDUNK, dDUNK, cDUNK)")
+        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> Machine Learning models trained on 3 years of Delta Net Rating data. Isolates offensive creation, defensive stops, and total net impact.</p>", unsafe_allow_html=True)
                         st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>The Quant View:</b> DUNK is no longer a heuristic. It is a Ridge Regression Machine Learning model trained on 3 years of historical <code>Delta_NET_RATING</code> data. We mathematically defeated multicollinearity by dropping <code>PIE</code> (VIF > 16). The algorithm isolated the true weights of winning basketball: Efficiency (TS% @ 14.61) vastly outweighs Volume (USG% @ 3.65). This is the exact math the model uses to identify true impact engines.</p>", unsafe_allow_html=True)
                     with col_d2:
-                        st.markdown("#### 2. Gravity Index (GRAV)")
-                        st.markdown("<div class='nerd-formula'>GRAV = (3PA / 100 Poss) * (3P%)^2 * (Drive_Kick_Rate)</div>", unsafe_allow_html=True)
-                        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> How much defense a player sucks into their orbit simply by standing on the floor.</p>", unsafe_allow_html=True)
+                        
 
                     adv_df = load_advanced_players()
                     if adv_df is not None and not adv_df.empty:
