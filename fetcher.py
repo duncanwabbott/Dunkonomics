@@ -122,16 +122,31 @@ def fetch_advanced_players():
         logging.info("Fetching Advanced Player Stats...")
         player_stats = leaguedashplayerstats.LeagueDashPlayerStats(measure_type_detailed_defense='Advanced', timeout=30, headers=NBA_HEADERS)
         df = player_stats.get_data_frames()[0]
-        df['DUNK_SCORE'] = (df['TS_PCT'] * 0.4) + (df['AST_PCT'] * 0.3) + (df['USG_PCT'] * 0.2) + df['PIE'] - (df['TM_TOV_PCT'] * 1.5)
         
-        cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 'TS_PCT', 'AST_PCT', 'USG_PCT', 'PIE', 'TM_TOV_PCT', 'DUNK_SCORE']
+        # Load DUNK ML weights
+        import json
+        with open(os.path.join(DATA_DIR, "dunk_ml_weights.json"), "r") as f:
+            ml_data = json.load(f)
+        w = ml_data["weights"]
+        
+        df['DUNK_SCORE'] = (df['USG_PCT'] * w['USG_PCT']) + \
+                           (df['TS_PCT'] * w['TS_PCT']) + \
+                           (df['AST_PCT'] * w['AST_PCT']) + \
+                           (df['TOV_PCT'] * w['TOV_PCT']) + \
+                           (df['OREB_PCT'] * w['OREB_PCT']) + \
+                           (df['DREB_PCT'] * w['DREB_PCT']) + \
+                           (df['STL_PCT'] * w['STL_PCT']) + \
+                           (df['BLK_PCT'] * w['BLK_PCT']) + \
+                           w['intercept']
+        
+        cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 'USG_PCT', 'TS_PCT', 'AST_PCT', 'TOV_PCT', 'OREB_PCT', 'DREB_PCT', 'STL_PCT', 'BLK_PCT', 'PIE', 'DUNK_SCORE']
         df = df[[c for c in cols if c in df.columns]].sort_values('DUNK_SCORE', ascending=False)
         df.to_csv(os.path.join(DATA_DIR, "advanced_players.csv"), index=False)
         logging.info("Advanced players saved.")
         return True
     except Exception as e:
         logging.error(f"Failed to fetch advanced players: {e}")
-        cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 'TS_PCT', 'AST_PCT', 'USG_PCT', 'PIE', 'TM_TOV_PCT', 'DUNK_SCORE']
+        cols = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 'USG_PCT', 'TS_PCT', 'AST_PCT', 'TOV_PCT', 'OREB_PCT', 'DREB_PCT', 'STL_PCT', 'BLK_PCT', 'PIE', 'DUNK_SCORE']
         pd.DataFrame(columns=cols).to_csv(os.path.join(DATA_DIR, "advanced_players.csv"), index=False)
         return False
 

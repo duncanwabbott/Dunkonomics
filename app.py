@@ -319,9 +319,9 @@ elif page == "Player Micro":
                     st.markdown("### The Proprietary Metrics")
                     col_d1, col_d2 = st.columns(2)
                     with col_d1:
-                        st.markdown("#### 1. DUNK Score (Dunkonomics Universal Net Kinetcs)")
-                        st.markdown("<div class='nerd-formula'>DUNK = (TS% * 0.4) + (AST% * 0.3) + (USG% * 0.2) + (STL% + BLK%) - (TOV% * 1.5)</div>", unsafe_allow_html=True)
-                        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> The ultimate offensive engine metric. Heavily penalizes turnovers, rewards highly efficient hub players.</p>", unsafe_allow_html=True)
+                        st.markdown("#### 1. DUNK Score (Delta Net Rating Regression)")
+                        st.markdown("<div class='nerd-formula'>DUNK = (TS% * 14.61) + (AST% * 8.63) + (STL% * 7.04) + (DREB% * 4.92) + (USG% * 3.65) + (OREB% * 3.11) + (BLK% * 2.26) - (TOV% * 0.34) - 9.68</div>", unsafe_allow_html=True)
+                        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>The Quant View:</b> DUNK is no longer a heuristic. It is a Ridge Regression Machine Learning model trained on 3 years of historical <code>Delta_NET_RATING</code> data. We mathematically defeated multicollinearity by dropping <code>PIE</code> (VIF > 16). The algorithm isolated the true weights of winning basketball: Efficiency (TS% @ 14.61) vastly outweighs Volume (USG% @ 3.65). This is the exact math the model uses to identify true impact engines.</p>", unsafe_allow_html=True)
                     with col_d2:
                         st.markdown("#### 2. Gravity Index (GRAV)")
                         st.markdown("<div class='nerd-formula'>GRAV = (3PA / 100 Poss) * (3P%)^2 * (Drive_Kick_Rate)</div>", unsafe_allow_html=True)
@@ -464,7 +464,10 @@ elif page == "Team Advanced":
     st.markdown("### 🔒 Premium Advanced Analytics")
     st.warning("You are viewing a free preview of Dunkonomics PRO. Soon, these advanced models will require a premium subscription.")
 
-    st.markdown("### Interactive DUNK Score Explorer")
+    st.markdown("### Interactive DUNK Score Explorer (Machine Learning Edition)")
+    st.markdown("<div class='nerd-header'>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#cbd5e1; font-size:0.95rem; margin-top:10px;'><b>The Quant View:</b> DUNK is a Ridge Regression Machine Learning model trained on 3 years of historical <code>Delta_NET_RATING</code> data. We mathematically defeated multicollinearity by dropping <code>PIE</code> (VIF > 16). The algorithm isolated the exact weights of winning basketball: Efficiency (TS% @ 14.61) dwarfs Volume (USG% @ 3.65).</p>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
     
     import plotly.express as px
     import os
