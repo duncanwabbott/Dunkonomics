@@ -224,7 +224,7 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-page = st.radio("Navigation", ["League Macro", "Player Micro", "Team Advanced", "⚖️ Foul Economics", "🤓 Sports Dorks [PRO]"], horizontal=True, label_visibility="collapsed")
+page = st.radio("Navigation", ["League Macro", "Player Micro", "Team Advanced", "⚖️ Foul Economics"], horizontal=True, label_visibility="collapsed")
 st.markdown("<br>", unsafe_allow_html=True)
 
 # --- PAGE: LEAGUE MACRO ---
@@ -312,6 +312,29 @@ elif page == "Player Micro":
                     st.dataframe(stats_df[raw_cols], hide_index=True, use_container_width=True)
 
                     st.markdown("---")
+                    st.markdown("### 🔒 Premium Advanced Analytics")
+                    st.warning("You are viewing a free preview of Dunkonomics PRO. Soon, these advanced models will require a premium subscription.")
+
+                    st.markdown("<div class='nerd-header'><h3 class='nerd-title'>SPORTS DORKS: THE LABORATORY</h3><p style='color: #94a3b8; font-size: 0.9rem; margin-top: 5px;'>Welcome to the basement. Here we break down traditional counting stats into our proprietary composite metrics.</p></div>", unsafe_allow_html=True)
+                    st.markdown("### The Proprietary Metrics")
+                    col_d1, col_d2 = st.columns(2)
+                    with col_d1:
+                        st.markdown("#### 1. DUNK Score (Dunkonomics Universal Net Kinetcs)")
+                        st.markdown("<div class='nerd-formula'>DUNK = (TS% * 0.4) + (AST% * 0.3) + (USG% * 0.2) + (STL% + BLK%) - (TOV% * 1.5)</div>", unsafe_allow_html=True)
+                        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> The ultimate offensive engine metric. Heavily penalizes turnovers, rewards highly efficient hub players.</p>", unsafe_allow_html=True)
+                    with col_d2:
+                        st.markdown("#### 2. Gravity Index (GRAV)")
+                        st.markdown("<div class='nerd-formula'>GRAV = (3PA / 100 Poss) * (3P%)^2 * (Drive_Kick_Rate)</div>", unsafe_allow_html=True)
+                        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> How much defense a player sucks into their orbit simply by standing on the floor.</p>", unsafe_allow_html=True)
+
+                    adv_df = load_advanced_players()
+                    if adv_df is not None and not adv_df.empty:
+                        player_adv = adv_df[adv_df["PLAYER_ID"] == pid]
+                        if not player_adv.empty:
+                            dunk_val = player_adv["DUNK_SCORE"].values[0]
+                            st.markdown(f"<div class='metric-card'><div class='metric-title' style='color: #a78bfa;'>DUNK Score</div><div class='metric-value' style='color: #a78bfa;'>{dunk_val:.2f}</div><div class='metric-sub'>Proprietary Offensive Engine Metric</div></div>", unsafe_allow_html=True)
+                            st.markdown("<br>", unsafe_allow_html=True)
+
                     st.markdown("### Cumulative Fatigue Framework (CumFat)")
                     st.markdown("<p style='color: #94a3b8; font-size: 0.95rem; margin-top: -10px; font-weight: 400;'>Advanced physiological load modeling separating acute injury risk from biomechanical performance degradation.</p>", unsafe_allow_html=True)
                     
@@ -437,21 +460,10 @@ elif page == "Team Advanced":
     else:
         st.info("Warehouse syncing in progress. Data available shortly.")
 
-# --- PAGE: SPORTS DORKS ---
-elif page == "🤓 Sports Dorks [PRO]":
-    st.markdown("<div class='nerd-header'><h3 class='nerd-title'>SPORTS DORKS: THE LABORATORY</h3><p style='color: #94a3b8; font-size: 0.9rem; margin-top: 5px;'>Welcome to the basement. Here we break down traditional counting stats into our proprietary composite metrics.</p></div>", unsafe_allow_html=True)
-    st.markdown("### The Proprietary Metrics")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("#### 1. DUNK Score (Dunkonomics Universal Net Kinetcs)")
-        st.markdown("<div class='nerd-formula'>DUNK = (TS% * 0.4) + (AST% * 0.3) + (USG% * 0.2) + (STL% + BLK%) - (TOV% * 1.5)</div>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> The ultimate offensive engine metric. Heavily penalizes turnovers, rewards highly efficient hub players.</p>", unsafe_allow_html=True)
-    with col2:
-        st.markdown("#### 2. Gravity Index (GRAV)")
-        st.markdown("<div class='nerd-formula'>GRAV = (3PA / 100 Poss) * (3P%)^2 * (Drive_Kick_Rate)</div>", unsafe_allow_html=True)
-        st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> How much defense a player sucks into their orbit simply by standing on the floor.</p>", unsafe_allow_html=True)
-
     st.markdown("---")
+    st.markdown("### 🔒 Premium Advanced Analytics")
+    st.warning("You are viewing a free preview of Dunkonomics PRO. Soon, these advanced models will require a premium subscription.")
+
     st.markdown("### Interactive DUNK Score Explorer")
     
     import plotly.express as px
@@ -496,7 +508,5 @@ elif page == "🤓 Sports Dorks [PRO]":
         st.plotly_chart(fig, use_container_width=True)
     else:
         st.info("Advanced player data is syncing in the background. Please check back shortly.")
-
-
 st.markdown("---")
 st.markdown("<p style='text-align: center; color: #475569; font-size: 0.75rem; font-family: JetBrains Mono;'>SYSTEM: DUNKONOMICS OS v1.0.1 // DATA: STATS.NBA.COM // STATUS: OPERATIONAL</p>", unsafe_allow_html=True)
