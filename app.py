@@ -147,7 +147,7 @@ def load_cumfat_v2():
     return None
 
 @st.cache_data(ttl=3600, show_spinner=False)
-def load_player_fouls():
+def load_player_fouls_v2():
     if os.path.exists(PLAYER_FOULS_FILE): return pd.read_csv(PLAYER_FOULS_FILE)
     return None
 
@@ -361,7 +361,7 @@ elif page == "Player Micro":
                     else:
                         st.info("CumFat processing pipeline active. Metrics will reflect upon synchronization completion.")
                     st.markdown("### ⚖️ Discipline & Foul Profile")
-                    player_fouls = load_player_fouls()
+                    player_fouls = load_player_fouls_v2()
                     if player_fouls is not None and not player_fouls.empty:
                         pf_df = player_fouls[player_fouls['PLAYER_ID'] == pid]
                         if not pf_df.empty:
