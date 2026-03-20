@@ -323,7 +323,7 @@ elif page == "Player Micro":
                         st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>What it measures:</b> Machine Learning models trained on 3 years of Delta Net Rating data. Isolates offensive creation, defensive stops, and total net impact.</p>", unsafe_allow_html=True)
                         st.markdown("<p style='color:#cbd5e1; font-size:0.85rem; margin-top:10px;'><b>The Quant View:</b> DUNK is no longer a heuristic. It is a Ridge Regression Machine Learning model trained on 3 years of historical <code>Delta_NET_RATING</code> data. We mathematically defeated multicollinearity by dropping <code>PIE</code> (VIF > 16). The algorithm isolated the true weights of winning basketball: Efficiency (TS% @ 14.61) vastly outweighs Volume (USG% @ 3.65). This is the exact math the model uses to identify true impact engines.</p>", unsafe_allow_html=True)
                     with col_d2:
-                        
+                        pass
 
                     adv_df = load_advanced_players()
                     if adv_df is not None and not adv_df.empty:
