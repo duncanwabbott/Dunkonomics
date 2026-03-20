@@ -109,7 +109,7 @@ def check_and_fetch_data():
     if needs_fetch:
         trigger_fetch_cycle()
 
-check_and_fetch_data()
+# check_and_fetch_data() # Disabled to prevent blocking DO port binding
 
 # --- LOCAL DATA READERS ---
 def get_last_updated(filepath):
