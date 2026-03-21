@@ -242,10 +242,10 @@ if page == "League Macro":
         tab1, tab2 = st.tabs(["Eastern Conference", "Western Conference"])
         with tab1:
             east = df[df['Conference'] == 'East'].sort_values('Rank').drop(columns=['Conference'])
-            st.dataframe(east.style.background_gradient(subset=['Diff'], cmap='RdYlGn'), use_container_width=True, hide_index=True)
+            st.dataframe(east.style.background_gradient(subset=['Diff'], cmap='RdYlGn'), width='stretch', hide_index=True)
         with tab2:
             west = df[df['Conference'] == 'West'].sort_values('Rank').drop(columns=['Conference'])
-            st.dataframe(west.style.background_gradient(subset=['Diff'], cmap='RdYlGn'), use_container_width=True, hide_index=True)
+            st.dataframe(west.style.background_gradient(subset=['Diff'], cmap='RdYlGn'), width='stretch', hide_index=True)
     else:
         st.info("Warehouse syncing in progress. Data available shortly.")
 
@@ -301,15 +301,15 @@ elif page == "Player Micro":
                             fig = px.bar(l10[::-1], x='GAME_DATE', y='PTS', template="plotly_dark", color='PTS', color_continuous_scale='Blues')
                             fig.update_layout(plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', margin=dict(l=0, r=0, t=0, b=0), coloraxis_showscale=False)
                             fig.add_hline(y=pts, line_dash="dot", annotation_text=f"Season Avg ({pts})", annotation_position="top right", line_color="#10b981")
-                            st.plotly_chart(fig, use_container_width=True)
+                            st.plotly_chart(fig, width='stretch')
                     with col_data:
                         st.markdown("##### Efficiency Matrix")
                         eff_data = {"Metric": ["Field Goal %", "3-Point %", "Free Throw %", "eFG %"], "Value": [f"{round((fgm/fga)*100, 1) if fga>0 else 0}%", f"{round((fg3m/fg3a)*100, 1) if fg3a>0 else 0}%", f"{round((ftm/fta)*100, 1) if fta>0 else 0}%", f"{round(((fgm + 0.5 * fg3m) / fga)*100, 1) if fga>0 else 0}%"], "Volume": [f"{fgm}/{fga}", f"{fg3m}/{fg3a}", f"{ftm}/{fta}", "-"]}
-                        st.dataframe(pd.DataFrame(eff_data), hide_index=True, use_container_width=True)
+                        st.dataframe(pd.DataFrame(eff_data), hide_index=True, width='stretch')
                         
                     st.markdown("##### Raw Season Totals")
                     raw_cols = ['TEAM_ABBREVIATION', 'MIN', 'FGM', 'FGA', 'FG3M', 'FG3A', 'FTM', 'FTA', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TOV']
-                    st.dataframe(stats_df[raw_cols], hide_index=True, use_container_width=True)
+                    st.dataframe(stats_df[raw_cols], hide_index=True, width='stretch')
 
                     st.markdown("---")
                     st.markdown("### 🔒 Premium Advanced Analytics")
@@ -431,7 +431,7 @@ elif page == "⚖️ Foul Economics":
                     'FGA': '{:.1f}', 
                     'Net_Fouls': '{:.1f}'
                 }),
-                use_container_width=True,
+                width='stretch',
                 hide_index=True,
                 height=600
             )
@@ -452,9 +452,9 @@ elif page == "Team Advanced":
         fig.update_yaxes(autorange="reversed")
         fig.update_traces(textposition='top center', marker=dict(line=dict(width=1, color='#0f172a')))
         fig.update_layout(height=500, plot_bgcolor='#0b1121', paper_bgcolor='rgba(0,0,0,0)', font=dict(family="Inter", color="#94a3b8"), margin=dict(t=20))
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         st.markdown("##### Deep Database (Sortable)")
-        st.dataframe(team_df.style.background_gradient(subset=['NET_RATING'], cmap='RdYlGn').background_gradient(subset=['OFF_RATING'], cmap='Greens').background_gradient(subset=['DEF_RATING'], cmap='Reds_r').format({'OFF_RATING': '{:.1f}', 'DEF_RATING': '{:.1f}', 'NET_RATING': '{:.1f}', 'TS_PCT': '{:.3f}', 'PACE': '{:.1f}', 'AST_PCT': '{:.1f}'}), use_container_width=True, hide_index=True, height=400)
+        st.dataframe(team_df.style.background_gradient(subset=['NET_RATING'], cmap='RdYlGn').background_gradient(subset=['OFF_RATING'], cmap='Greens').background_gradient(subset=['DEF_RATING'], cmap='Reds_r').format({'OFF_RATING': '{:.1f}', 'DEF_RATING': '{:.1f}', 'NET_RATING': '{:.1f}', 'TS_PCT': '{:.3f}', 'PACE': '{:.1f}', 'AST_PCT': '{:.1f}'}), width='stretch', hide_index=True, height=400)
     else:
         st.info("Warehouse syncing in progress. Data available shortly.")
 
@@ -484,7 +484,7 @@ elif page == "Team Advanced":
                 'TM_TOV_PCT': '{:.3f}', 
                 'DUNK_SCORE': '{:.2f}'
             }),
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
             height=400
         )
@@ -506,7 +506,7 @@ elif page == "Team Advanced":
             labels={'TS_PCT': 'True Shooting %', 'USG_PCT': 'Usage Rate %'}
         )
         fig.update_layout(template='plotly_dark')
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
     else:
         st.info("Advanced player data is syncing in the background. Please check back shortly.")
 st.markdown("---")
