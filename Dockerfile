@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies if any are needed (Streamlit sometimes needs these)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -16,8 +16,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
-# Expose the port DigitalOcean expects
+# Explicitly set Streamlit environment variables
+ENV STREAMLIT_SERVER_PORT=8080
+ENV STREAMLIT_SERVER_ADDRESS=0.0.0.0
+ENV STREAMLIT_SERVER_HEADLESS=true
+ENV STREAMLIT_SERVER_ENABLE_CORS=false
+ENV STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
+
 EXPOSE 8080
 
-# Run the application
-CMD sh -c "streamlit run app.py --server.headless=true --server.port=${PORT:-8080} --server.address=0.0.0.0"
+# Clean array CMD format to bypass shell signal/routing issues
+CMD ["streamlit", "run", "app.py"]
