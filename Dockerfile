@@ -20,4 +20,4 @@ COPY . .
 EXPOSE 8080
 
 # Run the application
-CMD sh -c "streamlit run app.py --server.port=${PORT:-8080} --server.address=0.0.0.0"
+CMD sh -c "streamlit run app.py --server.headless=true --server.port=${PORT:-8080} --server.address=0.0.0.0"
